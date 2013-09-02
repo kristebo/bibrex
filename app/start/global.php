@@ -95,3 +95,38 @@ Validator::extend('not_guest_ltid', function($attribute, $value, $parameters)
 {
     return $value != Config::get('app.guest_ltid');
 });
+
+
+class DemoNcipClient extends Danmichaelo\Ncip\NcipClient {
+
+	/**
+	 * Post xml document to the NCIP service
+	 *
+	 * @param  string  $request
+	 * @return Danmichaelo\Ncip\CheckOutResponse
+	 */
+	public function checkOutItem($user_id, $item_id) {
+		$response = new Danmichaelo\Ncip\CheckOutResponse(null);
+		$due = new DateTime;
+		$due->add( DateInterval::createFromDateString('28 days') );
+		$due->sub( DateInterval::createFromDateString('1 second') );
+		$response->success = true;
+		$response->dueDate = $due;
+		return $response;
+	}
+
+	/**
+	 * Post xml document to the NCIP service
+	 *
+	 * @param  string  $request
+	 * @return Danmichaelo\Ncip\CheckInResponse
+	 */
+	public function checkInItem($item_id) {
+		$response = new Danmichaelo\Ncip\CheckInResponse(null);
+		$response->success = true;
+		return $response;
+	}
+
+}
+
+App::bind('NcipClient', 'DemoNcipClient');

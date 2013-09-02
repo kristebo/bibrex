@@ -23,7 +23,7 @@
 
     @section('sidebar')
 
-    <div class="navbar">
+    <nav class="navbar navbar-default navbar-static-top" role="navigation">
       <ul class="nav navbar-nav">
         <li><a href="{{ URL::action('LoansController@getIndex') }}">Utlån</a></li>
         <li><a href="{{ URL::action('UsersController@getIndex') }}">Brukere</a></li>
@@ -31,8 +31,14 @@
         <li><a href="{{ URL::action('ThingsController@getIndex') }}">Ting</a></li>
       </ul>
       <p class="navbar-text pull-right"><a href="/about">Hjelp</a></p>
-     </div>
-    
+     </nav>
+
+      <p style="background: #FF0000; color:white; font-weight: bold; padding: 10px 30px; margin: 20px 0; border-radius:5px;">
+        NB! Dette er en BIBREX-demo som ikke gjør noen NCIP-oppslag som medfører endringer i BIBSYS;
+        demoen gjør oppslag på lånekort (LookupUser), men registrerer ikke utlån (CheckOutItem) og innleveringer (CheckInItem).
+        Utlån blir kun registrert i BIBREX sin demodatabase, og lånetiden settes til 28 dager fremfor å hentes fra CheckOutResponse.
+      </p>
+
     @show
 
     @if (!empty($status))
