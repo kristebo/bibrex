@@ -42,7 +42,7 @@
     @show
 
     @if (!empty($status))
-      <div class="alert alert-info">
+      <div class="alert alert-info" style="display:none;">
         <button type="button" class="close" data-dismiss="alert">&times;</button>  
         {{$status}}
       </div>
@@ -79,14 +79,15 @@
   <script type="text/javascript">
 
     $(document).ready(function() {
-    
-      if ($('.alert').length != 0) {
 
+      if ($('.alert').length != 0) {
         $('.alert').hide().slideDown();
       }
 
+      //parent.postMessage("Hello","*");
+
     });
   </script>
- 
-</body> 
+
+</body>
 </html>
