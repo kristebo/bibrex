@@ -48,10 +48,17 @@ class Loan extends Eloquent {
 
 	public function daysLeftFormatted() {
 		$d = $this->daysLeft();
-		if ($d == 999999) return 'Forfaller aldri';
-		return $d >= 0
-			? '<span style="color:green;">Forfaller om ' . $d . ' dager</span>'
-			: '<span style="color:red;">Forfalt for ' . abs($d) . ' dager siden</span>';
+		if ($d == 999999) 
+			return 'Forfaller «aldri»';
+		if ($d > 1)
+			return '<span style="color:green;">Forfaller om ' . $d . ' dager</span>';
+		if ($d == 1)
+			return '<span style="color:orange;">Forfaller i morgen</span>';
+		if ($d == 0)
+			return '<span style="color:orange;">Forfaller i dag</span>';
+		if ($d == -1)
+			return '<span style="color:red;">Forfalt i går</span>';
+		return'<span style="color:red;">Forfalt for ' . abs($d) . ' dager siden</span>';
 	}
 
 	private function ncipCheckout() {
@@ -77,11 +84,21 @@ class Loan extends Eloquent {
 
 			// BIBSYS sometimes returns an empty response on successful checkouts.
 			// We will therefore threat an empty response as success... for now...
+			$logmsg = 'Lånte ut [[Document:' . $dokid . ']] til ' . $ltid . '';
+			if ($this->as_guest) {
+				$logmsg .= ' (midlertidig lånekort)';
+			}
+			$logmsg .= ' i BIBSYS.';
 			if ((!$response->success && $response->error == 'Empty response') || ($response->success)) {
 				if ($response->dueDate) {
 					$this->due_at = $response->dueDate;
+					$logmsg .= ' Fikk forfallsdato.';
+				} else {
+					$logmsg .= ' Fikk tom respons.';
 				}
+				Log::info($logmsg);
 			} else {
+				Log::info('Dokumentet [[Document:' . $dokid . ']] kunne ikke lånes ut i BIBSYS: ' . $response->error);
 				$this->errors->add('checkout_error', 'Dokumentet kunne ikke lånes ut i BIBSYS: ' . $response->error);
 				return false;
 			}
@@ -127,6 +144,7 @@ class Loan extends Eloquent {
 			if (!$response->success) {
 				dd("Dokumentet kunne ikke leveres inn i BIBSYS: " . $response->error);
 			}
+			Log::info('Returnerte [[Document:' . $dokid . ']] i BIBSYS');
 		}
 
 		parent::delete();
