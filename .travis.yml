@@ -1,26 +1,61 @@
-# http://about.travis-ci.org/docs/user/languages/php/
-
 language: php
+
 php:
-  - 5.3
-  - 5.4
-  - 5.5
-  - 5.6
-  - hhvm
+  - 7.1
+
+services:
+  - postgresql
+
+addons:
+  sauce_connect:
+    tunnel_domains: bibrex.test
+  postgresql: "9.6"
+  hosts:
+    - bibrex.test
+
+before_install:
+  - psql -c "CREATE USER bibrex_test WITH PASSWORD 'bibrex_test';" -U postgres
+  - psql -c "CREATE DATABASE bibrex_test WITH OWNER 'bibrex_test' ENCODING 'UTF-8';" -U postgres
+  - cp .env.travis .env
+  - rm .env.travis
+  - npm config set "@fortawesome:registry" https://npm.fontawesome.com/
+  - npm config set "//npm.fontawesome.com/:_authToken" $FORT_AWESOME_TOKEN
 
 install:
-  - composer install
-  - node -v
-  - npm version
-  - npm install bower
-  - ./node_modules/.bin/bower install
+  - composer install --no-interaction
+  - php artisan key:generate
+  - php artisan migrate --seed
+  - npm install
+  - npm run production
 
 before_script:
-  - vendor/bin/codecept build
-  - mysql -e 'create database myapp_test;'
-  - php artisan --env=testing --database=mysql --seed migrate
-  - php artisan --env=testing --database=mysql db:backup app/tests/_data/dump.sql
+  - php artisan serve --host=bibrex.test --no-interaction &
+  - sleep 2
 
 script:
   - vendor/bin/phpunit
-  - vendor/bin/codecept run functional --steps --debug
+  - TEST_HOST="http://${SAUCE_USERNAME}:${SAUCE_ACCESS_KEY}@ondemand.saucelabs.com/wd/hub" php artisan dusk --testdox
+
+after_failure:
+  - cat storage/logs/*.log
+
+# Generate encrypted variables:
+#   travis encrypt SAUCE_ACCESS_KEY=_________
+#   travis encrypt FORT_AWESOME_TOKEN=_________
+#   travis encrypt PUSHER_APP_SECRET=_________
+env:
+  global:
+    - SAUCE_USERNAME=danmichaelo
+    - secure: L/GaRhLRAth5HRgLzADcYnWiVGSx0KDz8m+w8iz6pPwzbOkGDLNPpqXv59OVbnoFOOdgZRrgq1fTkbBwLpDD466Z8FnUg92LwQK/F0OBR8++jCtykIkfWCEzdwbnoBeI5qA4onpxlvRxHQMAhyfR8QjFpXBgXYS0sEPEUV1VfYQ=
+    - secure: Aay2uW1qotWC7S1KVoZigUeXoiKpIc3ogcjQ26t0lSq4uLW759TBAPXpnsDnCTl5gckMf9lTyArdeQJIFADFqxUp6qT/JwaIRUhwysyvFg2V0Ln/lKBcfr2w9d30IRf8z0F6aqEW0Jzz0e/tMvxP0pBdrPfIk4Doa749KLMbRFY=
+    - secure: drhLw/MKkrVYZNF9fsfVHyB+DYeUpVcKpWIkiR5kQTJKNEl5Kn9IMdDurn7JV8fJmBMsnaY6e+wT+E8PwdS9MD937h4MlmIOj2BAIiZpus3YG+1NzKcjk86E8xGh6d2FPY0bvniEWMeWbjIuZGUj9U4UTarrGL2UKcVWZlLr3ew=
+  matrix:
+    - TEST_PLATFORM="Windows 7" TEST_BROWSER="internet explorer" TEST_BROWSER_VERSION="11.0"
+    - TEST_PLATFORM="Windows 7" TEST_BROWSER="chrome"
+    - TEST_PLATFORM="Windows 10" TEST_BROWSER="firefox"
+
+cache:
+  timeout: 3600
+  directories:
+    - vendor
+    - node_modules
