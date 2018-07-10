@@ -4,7 +4,9 @@
 
   <thing-editor :data="{{ json_encode($thing) }}"></thing-editor>
 
+  @if ($thing->id)
   <thing-settings-editor :thing-id="{{ $thing->id }}" :data="{{ json_encode($thing->library_settings) }}"></thing-settings-editor>
+  @endif
 
  @if($thing->id)
   <div class="card mb-3">
